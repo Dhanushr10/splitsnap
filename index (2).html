@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>SplitSnap</title>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --g:#0D9B72;--g2:#0B7A5A;--gl:#E0F5EE;--gm:rgba(13,155,114,0.3);
+  --c:#E05535;--cl:#FDF0EC;--c2:#B83D22;
+  --a:#C97B1A;--al:#FDF3E3;
+  --b:#2563EB;--bl:#DBEAFE;
+  --p:#7C3AED;--pl:#EDE9FE;
+  --k:#1A1A1A;--k2:#3D3D3D;--k3:#8A8A8A;
+  --s:#F6F5F2;--w:#FFFFFF;--br:rgba(0,0,0,0.09);
+  --r:14px;--rs:9px;--rp:100px;
+  --fd:'Sora',sans-serif;--fb:'DM Sans',sans-serif;
+  --sh:0 2px 12px rgba(0,0,0,0.07);--shl:0 6px 28px rgba(0,0,0,0.12);
+}
+html,body{height:100%;background:var(--s);font-family:var(--fb);color:var(--k);overflow-x:hidden}
+#app{max-width:430px;margin:0 auto;min-height:100vh;background:var(--s)}
+.screen{display:none;padding-bottom:118px;min-height:100vh;animation:fu .2s ease}
+.screen.active{display:block}
+@keyframes fu{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* NAV */
+.nav{display:flex;align-items:center;padding:14px 18px 8px;gap:12px;background:var(--s);position:sticky;top:0;z-index:50}
+.nb{width:36px;height:36px;border-radius:50%;background:var(--w);border:1px solid var(--br);display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;transition:transform .15s}
+.nb:active{transform:scale(.92)}
+.ntitle{font-family:var(--fd);font-size:17px;font-weight:600;color:var(--k)}
+.nbadge{margin-left:auto;font-size:11px;font-weight:600;padding:4px 11px;border-radius:var(--rp);background:var(--g);color:white}
+
+/* BOTTOM BAR */
+.bot{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:430px;padding:12px 18px 26px;background:rgba(255,255,255,.95);border-top:1px solid var(--br);z-index:100;backdrop-filter:blur(10px)}
+.btn{width:100%;padding:15px;border-radius:var(--r);font-family:var(--fd);font-size:15px;font-weight:600;cursor:pointer;border:none;transition:all .16s}
+.btng{background:var(--g);color:white}.btng:active{background:var(--g2);transform:scale(.98)}.btng:disabled{background:#C5C5C0;cursor:not-allowed;transform:none}
+.btns{background:transparent;color:var(--k);border:1.5px solid var(--br);margin-top:9px}.btns:active{background:var(--s)}
+.btna{background:var(--a);color:white;margin-top:9px}.btna:active{background:#a8610f;transform:scale(.98)}
+input,select{font-family:var(--fb);font-size:14px;color:var(--k);outline:none}
+
+/* PROGRESS */
+.prog-bar{height:3px;background:var(--br);margin:0 18px 4px;border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:var(--g);border-radius:3px;transition:width .4s ease}
+
+/* ── HOME ── */
+.home-hero{padding:28px 18px 20px}
+.logo-row{display:flex;align-items:center;gap:10px;margin-bottom:24px}
+.lmark{width:44px;height:44px;background:var(--g);border-radius:12px;display:flex;align-items:center;justify-content:center}
+.lname{font-family:var(--fd);font-size:22px;font-weight:700;color:var(--k);letter-spacing:-.5px}
+.h1{font-family:var(--fd);font-size:28px;font-weight:700;line-height:1.2;color:var(--k);letter-spacing:-.7px;margin-bottom:8px}
+.hsub{font-size:14px;color:var(--k3);line-height:1.65;margin-bottom:20px}
+.cat-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:18px}
+.cat-tile{background:var(--w);border:1.5px solid var(--br);border-radius:var(--rs);padding:14px 8px;text-align:center;cursor:pointer;transition:all .15s}
+.cat-tile.sel{border-color:var(--g);background:var(--gl)}
+.cat-tile:active{transform:scale(.95)}
+.ct-icon{font-size:22px;margin-bottom:4px}
+.ct-name{font-size:11px;font-weight:600;color:var(--k2)}
+.hist-row{display:flex;align-items:center;justify-content:space-between;padding:0 18px;margin-bottom:10px}
+.hist-title{font-family:var(--fd);font-size:13px;font-weight:600;color:var(--k3);text-transform:uppercase;letter-spacing:.6px}
+.hist-more{font-size:12px;font-weight:600;color:var(--g);cursor:pointer}
+.hist-card{margin:0 18px 8px;background:var(--w);border:1px solid var(--br);border-radius:var(--rs);padding:13px 14px;display:flex;align-items:center;gap:12px;cursor:pointer}
+.hist-card:active{background:var(--s)}
+.hc-icon{width:36px;height:36px;border-radius:9px;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.hc-info{flex:1;min-width:0}
+.hc-name{font-size:14px;font-weight:600;color:var(--k);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hc-meta{font-size:11px;color:var(--k3);margin-top:2px}
+.hc-amt{font-family:var(--fd);font-size:15px;font-weight:700;color:var(--k)}
+.debt-banner{margin:0 18px 14px;background:var(--gl);border:1px solid var(--gm);border-radius:var(--rs);padding:14px;display:flex;gap:12px}
+.db-col{flex:1;text-align:center}
+.db-label{font-size:11px;color:var(--k3);margin-bottom:4px}
+.db-val{font-family:var(--fd);font-size:20px;font-weight:700;color:var(--g)}
+.db-val.owe{color:var(--c)}
+.db-div{width:1px;background:var(--br)}
+
+/* ── UPLOAD / EDIT STEP ── */
+.upload-zone{margin:0 18px;border:2px dashed rgba(13,155,114,.4);border-radius:var(--r);padding:30px 20px;text-align:center;background:var(--gl);cursor:pointer;transition:all .2s}
+.upload-zone:active{transform:scale(.98)}
+.uz-icon{width:52px;height:52px;background:white;border-radius:50%;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;box-shadow:var(--sh)}
+.uz-title{font-family:var(--fd);font-size:15px;font-weight:600;color:var(--g2);margin-bottom:3px}
+.uz-sub{font-size:12px;color:var(--g2);opacity:.7}
+.prev-box{margin:0 18px 14px;border-radius:var(--r);overflow:hidden;border:1px solid var(--br)}
+.prev-box img{width:100%;max-height:180px;object-fit:cover;display:block}
+.scan-ovl{text-align:center;padding:32px 0}
+.spinner{width:40px;height:40px;border:3px solid var(--gl);border-top-color:var(--g);border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.smsg{font-family:var(--fd);font-size:14px;font-weight:500;color:var(--k2)}
+.or-div{text-align:center;font-size:13px;color:var(--k3);margin:12px 0}
+.alt-btn{margin:0 18px;background:var(--w);border:1.5px solid var(--br);border-radius:var(--rs);padding:13px;text-align:center;cursor:pointer;font-size:13px;font-weight:600;color:var(--k2)}
+.alt-btn:active{background:var(--s)}
+/* Edit banner */
+.edit-banner{margin:14px 18px;background:var(--al);border:1px solid rgba(201,123,26,.2);border-radius:var(--rs);padding:11px 14px;font-size:13px;color:var(--a);display:flex;align-items:center;gap:8px}
+
+/* Bill summary card */
+.bill-card{margin:14px 18px;background:var(--g);border-radius:var(--r);padding:18px;color:white;position:relative;overflow:hidden}
+.bill-card::after{content:'';position:absolute;right:-20px;top:-20px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,.05)}
+.bc-cat{font-size:11px;font-weight:600;opacity:.65;text-transform:uppercase;letter-spacing:.8px;margin-bottom:4px}
+.bc-name{font-family:var(--fd);font-size:20px;font-weight:700;margin-bottom:3px}
+.bc-date{font-size:12px;opacity:.65;margin-bottom:14px}
+.bc-row{display:flex;justify-content:space-between;font-size:13px;opacity:.8;padding:2px 0}
+.bc-total{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid rgba(255,255,255,.18);padding-top:10px;margin-top:6px}
+.bc-tlabel{font-size:13px;opacity:.8}
+.bc-tval{font-family:var(--fd);font-size:28px;font-weight:700;letter-spacing:-.5px}
+.bc-edit{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.15);border:none;color:white;font-size:12px;font-weight:600;padding:6px 11px;border-radius:var(--rp);cursor:pointer;font-family:var(--fd)}
+
+/* Items editable list */
+.sh{font-family:var(--fd);font-size:11px;font-weight:700;color:var(--k3);text-transform:uppercase;letter-spacing:.8px;padding:0 18px;margin:14px 0 8px;display:flex;align-items:center;justify-content:space-between}
+.sh-action{font-size:12px;color:var(--g);cursor:pointer;font-weight:600;text-transform:none;letter-spacing:0}
+.item-row{margin:0 18px 7px;background:var(--w);border:1px solid var(--br);border-radius:var(--rs);padding:11px 13px;display:flex;align-items:flex-start;gap:10px;transition:all .15s}
+.ir-dot{width:8px;height:8px;background:var(--g);border-radius:50%;margin-top:5px;flex-shrink:0}
+.ir-dot.bucket{background:var(--p)}
+.ir-body{flex:1;min-width:0}
+.ir-name{font-size:14px;font-weight:500;color:var(--k)}
+.ir-badges{display:flex;gap:5px;flex-wrap:wrap;margin-top:4px}
+.badge{font-size:10px;padding:2px 7px;border-radius:var(--rp);font-weight:600}
+.badge-qty{background:var(--gl);color:var(--g2)}
+.badge-bucket{background:var(--pl);color:var(--p)}
+.badge-unit{background:var(--al);color:var(--a)}
+.ir-price{font-size:14px;font-weight:700;color:var(--k);font-family:var(--fd);flex-shrink:0}
+.ir-actions{display:flex;gap:5px;margin-top:8px}
+.ir-act-btn{padding:5px 10px;border-radius:6px;border:1px solid var(--br);background:var(--s);font-size:11px;font-weight:600;color:var(--k3);cursor:pointer;font-family:var(--fd)}
+.ir-act-btn.del{color:var(--c);border-color:rgba(224,85,53,.2);background:var(--cl)}
+.ir-act-btn.edit{color:var(--b);border-color:rgba(37,99,235,.2);background:var(--bl)}
+/* inline edit form */
+.ir-edit-form{margin-top:10px;padding-top:10px;border-top:1px solid var(--br);display:none;gap:6px;flex-wrap:wrap}
+.ir-edit-form.open{display:flex}
+.ef-inp{padding:8px 10px;border-radius:var(--rs);border:1.5px solid var(--br);font-size:13px;font-family:var(--fb);color:var(--k)}
+.ef-inp:focus{border-color:var(--g)}
+.ef-name{flex:3}
+.ef-price{flex:2}
+.ef-qty{flex:1;min-width:56px}
+.ef-save{padding:8px 13px;border-radius:var(--rs);background:var(--g);border:none;color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fd)}
+/* add item row */
+.add-item-row{margin:0 18px 10px;display:flex;gap:6px;flex-wrap:wrap}
+.ai-inp{padding:10px 11px;border-radius:var(--rs);border:1.5px solid var(--br);background:var(--w);font-family:var(--fb);font-size:13px;color:var(--k)}
+.ai-inp:focus{border-color:var(--g)}
+.ai-name{flex:3}
+.ai-price{flex:2}
+.ai-qty{flex:1;min-width:52px}
+.ai-btn{padding:10px 13px;border-radius:var(--rs);background:var(--g);border:none;color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--fd);white-space:nowrap}
+/* Bucket fields */
+.bucket-toggle{margin:0 18px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--k2)}
+.bucket-toggle input{width:16px;height:16px;accent-color:var(--p)}
+.bucket-extra{margin:0 18px 10px;background:var(--pl);border-radius:var(--rs);padding:11px 13px;border:1px solid rgba(124,58,237,.2);display:none}
+.be-label{font-family:var(--fd);font-size:11px;font-weight:600;color:var(--p);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+.be-inp{width:100%;padding:9px 12px;border-radius:var(--rs);border:1.5px solid rgba(124,58,237,.3);font-size:14px;font-family:var(--fb);color:var(--k)}
+/* meta inputs row */
+.meta-row{margin:0 18px 12px;display:flex;gap:8px}
+.meta-inp{flex:1;padding:10px 12px;border-radius:var(--rs);border:1.5px solid var(--br);background:var(--w);font-family:var(--fb);font-size:13px;color:var(--k)}
+.meta-inp:focus{border-color:var(--g)}
+
+/* ── FRIENDS + SHARE (merged) ── */
+.you-chip{margin:12px 18px 7px;background:var(--gl);border:1px solid var(--gm);border-radius:var(--rs);padding:12px 13px;display:flex;align-items:center;gap:11px}
+.fr-chip{margin:0 18px 7px;background:var(--w);border:1px solid var(--br);border-radius:var(--rs);padding:11px 13px;display:flex;align-items:center;gap:11px;transition:all .15s}
+.av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:13px;font-weight:700;flex-shrink:0}
+.fi{flex:1;min-width:0}
+.fname{font-size:14px;font-weight:500;color:var(--k)}
+.ftag{font-size:11px;color:var(--k3);margin-top:1px}
+.frm{width:27px;height:27px;border-radius:50%;background:rgba(224,85,53,.1);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--c);font-size:16px;flex-shrink:0}
+.add-fr-row{margin:8px 18px;display:flex;gap:7px}
+.add-fr-row input{flex:1;padding:11px 13px;border-radius:var(--rs);border:1.5px solid var(--br);background:var(--w);font-family:var(--fb);font-size:14px;color:var(--k)}
+.add-fr-row input:focus{border-color:var(--g)}
+.add-fr-row button{padding:11px 15px;border-radius:var(--rs);background:var(--g);border:none;color:white;font-family:var(--fd);font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap}
+.err-chip{margin:6px 18px;background:#FEF2EF;border:1px solid rgba(224,85,53,.2);border-radius:var(--rs);padding:9px 13px;font-size:12px;color:var(--c);display:none}
+/* saved groups */
+.grp-scroll{display:flex;gap:7px;padding:0 18px 4px;overflow-x:auto;scrollbar-width:none}
+.grp-scroll::-webkit-scrollbar{display:none}
+.grp-pill{padding:7px 13px;border-radius:var(--rp);border:1.5px solid var(--br);background:var(--w);font-size:12px;font-weight:600;color:var(--k2);cursor:pointer;white-space:nowrap;flex-shrink:0}
+.grp-pill.save{background:var(--g);border-color:var(--g);color:white}
+.grp-pill:active{transform:scale(.95)}
+/* upi setup */
+.upi-card{margin:12px 18px;background:var(--w);border:1px solid var(--br);border-radius:var(--rs);padding:14px}
+.upi-title{font-family:var(--fd);font-size:13px;font-weight:600;color:var(--k);margin-bottom:3px}
+.upi-sub{font-size:11px;color:var(--k3);margin-bottom:10px}
+.upi-row{display:flex;gap:7px}
+.upi-row input{flex:1;padding:10px 12px;border-radius:var(--rs);border:1.5px solid var(--br);font-size:14px}
+.upi-row input:focus{border-color:var(--g)}
+.upi-row button{padding:10px 13px;border-radius:var(--rs);background:var(--g);border:none;color:white;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--fd)}
+.upi-app-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.upi-chip{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:var(--rp);border:1px solid var(--br);background:var(--s);font-size:11px;font-weight:600;color:var(--k2);cursor:pointer}
+.upi-chip.on{background:var(--gl);border-color:var(--gm);color:var(--g2)}
+/* invite section */
+.inv-banner{margin:12px 18px;background:var(--k);border-radius:var(--r);padding:18px;color:white;text-align:center}
+.inv-title{font-family:var(--fd);font-size:15px;font-weight:700;margin-bottom:4px}
+.inv-sub{font-size:12px;opacity:.6;line-height:1.5}
+.link-row{margin:0 18px 10px;background:var(--w);border:1.5px solid var(--br);border-radius:var(--rs);padding:11px 13px;display:flex;align-items:center;gap:9px}
+.link-url{flex:1;font-size:11px;color:var(--k3);word-break:break-all;font-family:monospace}
+.copy-btn{background:var(--gl);border:none;color:var(--g2);font-size:11px;font-weight:700;padding:6px 11px;border-radius:6px;cursor:pointer;font-family:var(--fd);white-space:nowrap}
+.share-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 18px 10px}
+.sc{background:var(--w);border:1px solid var(--br);border-radius:var(--rs);padding:13px;text-align:center;cursor:pointer;transition:all .15s}
+.sc:active{transform:scale(.96)}
+.sc.wa{border-color:rgba(37,211,102,.3);background:#F0FDF6}
+.sc.sms{border-color:rgba(59,130,246,.3);background:#EFF6FF}
+.sc-icon{font-size:26px;margin-bottom:5px}
+.sc-name{font-family:var(--fd);font-size:12px;font-weight:600;color:var(--k)}
+.sc-desc{font-size:10px;color:var(--k3);margin-top:1px}
+.pending-row{margin:0 18px 7px;background:var(--w);border:1px solid var(--br);border-radius:var(--rs);padding:11px 13px;display:flex;align-items:center;gap:10px}
+.pdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.pdot.wait{background:var(--a);animation:pulse 1.5s ease-in-out infinite}
+.pdot.done{background:var(--g)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
+.presend{font-size:12px;font-weight:600;color:var(--g);cursor:pointer}
+
+/* ── SELECT ── */
+.split-mode-bar{margin:10px 18px;background:var(--w);border:1px solid var(--br);border-radius:var(--rs);padding:4px;display:flex;gap:2px}
+.sm-btn{flex:1;padding:9px 8px;border-radius:7px;font-size:12px;font-weight:600;color:var(--k3);cursor:pointer;text-align:center;border:none;background:transparent;font-family:var(--fd);transition:all .15s}
+.sm-btn.active{background:var(--g);color:white}
+.person-block{margin:0 18px 18px}
+.pb-head{display:flex;align-items:center;gap:9px;margin-bottom:9px;padding:6px 0;border-bottom:1px solid var(--br)}
+.pb-name{font-family:var(--fd);font-size:14px;font-weight:700;color:var(--k);flex:1}
+.pb-total{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--g)}
+.sel-item{background:var(--w);border:1.5px solid var(--br);border-radius:var(--rs);padding:11px 13px;cursor:pointer;margin-bottom:5px;transition:all .15s}
+.sel-item.on{border-color:var(--g);background:var(--gl)}
+.sel-item.shared{border-color:var(--a);background:var(--al)}
+.si-top{display:flex;align-items:flex-start;gap:9px}
+.chk{width:19px;height:19px;border-radius:5px;border:1.5px solid var(--br);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;transition:all .15s}
+.sel-item.on .chk{background:var(--g);border-color:var(--g)}
+.sel-item.shared .chk{background:var(--a);border-color:var(--a)}
+.ck-mark{color:white;font-size:10px;font-weight:700;display:none}
+.sel-item.on .ck-mark,.sel-item.shared .ck-mark{display:block}
+.si-name{flex:1;font-size:13px;font-weight:500;color:var(--k)}
+.si-price{font-size:12px;font-weight:700;color:var(--k);flex-shrink:0;font-family:var(--fd)}
+/* bucket piece counter */
+.pc-row{display:flex;align-items:center;gap:8px;margin-top:9px;padding-top:9px;border-top:1px dashed rgba(124,58,237,.2)}
+.pc-label{font-size:11px;color:var(--p);font-weight:500;flex:1}
+.pc-btns{display:flex;align-items:center;gap:8px;border:1.5px solid rgba(124,58,237,.25);border-radius:var(--rs);overflow:hidden}
+.pcb{width:29px;height:29px;border:none;background:var(--pl);cursor:pointer;font-size:16px;font-weight:600;color:var(--p);display:flex;align-items:center;justify-content:center}
+.pc-val{font-family:var(--fd);font-size:14px;font-weight:700;color:var(--p);min-width:26px;text-align:center;background:white;height:29px;display:flex;align-items:center;justify-content:center}
+/* unit stepper */
+.unit-stepper{display:flex;align-items:center;gap:8px;margin-top:9px;padding-top:9px;border-top:1px dashed rgba(201,123,26,.2);background:var(--al);border-radius:var(--rs);padding:8px 10px;margin-top:8px}
+.us-label{font-size:11px;color:var(--a);font-weight:500;flex:1}
+.us-btns{display:flex;align-items:center;gap:0;border:1.5px solid rgba(201,123,26,.3);border-radius:var(--rs);overflow:hidden}
+.usb{width:28px;height:28px;border:none;background:var(--al);cursor:pointer;font-size:15px;font-weight:700;color:var(--a);display:flex;align-items:center;justify-content:center}
+.us-val{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--a);min-width:28px;text-align:center;background:white;height:28px;display:flex;align-items:center;justify-content:center;padding:0 4px}
+.suggest-chip{display:inline-flex;align-items:center;gap:4px;background:var(--bl);border:1px solid rgba(37,99,235,.2);padding:2px 8px;border-radius:var(--rp);font-size:10px;font-weight:600;color:var(--b);cursor:pointer;margin-top:4px}
+.divider{height:1px;background:var(--br);margin:4px 18px 14px}
+
+/* ── RESULTS ── */
+.res-banner{margin:14px 18px;background:linear-gradient(135deg,#0D9B72,#0B6E50);border-radius:var(--r);padding:20px;color:white;position:relative;overflow:hidden}
+.rb-bg{position:absolute;right:-25px;bottom:-25px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.07)}
+.rb-label{font-size:11px;font-weight:600;opacity:.65;text-transform:uppercase;letter-spacing:.7px;margin-bottom:4px}
+.rb-amt{font-family:var(--fd);font-size:38px;font-weight:700;letter-spacing:-1px;margin-bottom:2px}
+.rb-sub{font-size:13px;opacity:.7}
+/* quick split toggle */
+.mode-toggle{margin:0 18px 12px;display:flex;gap:7px}
+.mt-btn{flex:1;padding:9px;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid var(--br);background:var(--w);color:var(--k2);font-family:var(--fd);text-align:center;transition:all .15s}
+.mt-btn.on{background:var(--g);border-color:var(--g);color:white}
+/* insights */
+.insights-row{display:flex;gap:7px;margin:0 18px 12px;overflow-x:auto;scrollbar-width:none}
+.ins-card{flex-shrink:0;background:var(--w);border:1px solid var(--br);border-radius:var(--rs);padding:11px 13px;min-width:130px}
+.ins-icon{font-size:20px;margin-bottom:4px}
+.ins-label{font-size:10px;color:var(--k3);font-weight:500}
+.ins-val{font-family:var(--fd);font-size:13px;font-weight:700;color:var(--k);margin-top:2px}
+/* person result card */
+.rp-card{margin:0 18px 10px;background:var(--w);border:1px solid var(--br);border-radius:var(--r);overflow:hidden}
+.rp-head{padding:13px 14px;display:flex;align-items:center;gap:11px;border-bottom:1px solid var(--br)}
+.rpi{flex:1;min-width:0}
+.rpi-name{font-family:var(--fd);font-size:14px;font-weight:700;color:var(--k)}
+.rpi-tag{font-size:11px;color:var(--k3);margin-top:2px}
+.rp-amt{font-family:var(--fd);font-size:22px;font-weight:700;color:var(--g);flex-shrink:0}
+.rp-items{padding:9px 14px}
+.rpl{display:flex;justify-content:space-between;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--br)}
+.rpl:last-child{border-bottom:none}
+.rpl-left{flex:1;min-width:0;margin-right:8px}
+.rpl-name{font-size:13px;color:var(--k2)}
+.rpl-detail{font-size:10px;margin-top:2px}
+.rpl-amt{font-size:13px;font-weight:700;color:var(--k);flex-shrink:0}
+.tag-eq{display:inline-block;background:var(--bl);color:var(--b);font-size:9px;font-weight:700;padding:1px 6px;border-radius:var(--rp)}
+.tag-unit{display:inline-block;background:var(--al);color:var(--a);font-size:9px;font-weight:700;padding:1px 6px;border-radius:var(--rp)}
+.tag-bucket{display:inline-block;background:var(--pl);color:var(--p);font-size:9px;font-weight:700;padding:1px 6px;border-radius:var(--rp)}
+.tax-row{padding:7px 14px;background:var(--s);display:flex;justify-content:space-between;font-size:12px;color:var(--k3);border-top:1px solid var(--br)}
+/* fun message */
+.fun-msg{padding:8px 14px;font-size:12px;font-weight:500;color:var(--k2);background:var(--s);display:flex;align-items:center;gap:6px;border-top:1px solid var(--br)}
+/* pay section */
+.pay-sec{padding:11px 14px;border-top:1px solid var(--br)}
+.pay-label{font-size:10px;font-weight:700;color:var(--k3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:8px}
+.pay-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.papp{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:var(--rs);border:1.5px solid var(--br);background:var(--w);cursor:pointer;text-decoration:none;transition:all .15s}
+.papp:active{transform:scale(.93)}
+.papp-logo{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;color:white}
+.papp-name{font-size:9px;font-weight:600;color:var(--k2);font-family:var(--fd);text-align:center}
+.papp.gpay{border-color:rgba(26,115,232,.25)}.papp.phonepe{border-color:rgba(95,37,159,.25)}.papp.paytm{border-color:rgba(0,41,112,.25)}.papp.bhim{border-color:rgba(0,82,155,.25)}.papp.cred{border-color:rgba(26,26,26,.15)}
+.pay-upi-btn{display:block;margin:8px 0 0;padding:11px;border-radius:var(--rs);background:var(--g);border:none;color:white;font-family:var(--fd);font-size:13px;font-weight:600;cursor:pointer;width:100%;text-align:center;text-decoration:none}
+.pay-note{padding:6px 14px 10px;font-size:11px;color:var(--k3);text-align:center}
+.payer-note{padding:10px 14px;font-size:12px;color:var(--g);font-weight:600;display:flex;align-items:center;gap:5px;background:var(--gl)}
+/* payment tracking */
+.paid-toggle{display:flex;align-items:center;gap:8px;padding:10px 14px;border-top:1px solid var(--br)}
+.pt-label{font-size:12px;color:var(--k3);flex:1}
+.pt-btn{padding:6px 13px;border-radius:var(--rp);border:none;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fd);transition:all .15s}
+.pt-btn.pending{background:var(--al);color:var(--a)}
+.pt-btn.paid{background:var(--gl);color:var(--g2)}
+.pay-summary{margin:0 18px 10px;background:var(--gl);border:1px solid var(--gm);border-radius:var(--rs);padding:11px 14px;font-size:13px;color:var(--g2);font-weight:600;display:flex;align-items:center;justify-content:space-between}
+/* TOAST */
+.toast{position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(8px);background:var(--k);color:white;padding:9px 18px;border-radius:var(--rp);font-size:13px;font-weight:500;opacity:0;transition:all .25s;pointer-events:none;z-index:999;white-space:nowrap;box-shadow:var(--shl)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* HISTORY SCREEN */
+.hist-empty{text-align:center;padding:40px 20px;color:var(--k3)}
+.hist-empty-icon{font-size:40px;margin-bottom:12px}
+.hist-empty-txt{font-size:14px;line-height:1.6}
+
+/* GROUPS SCREEN */
+.grp-card{margin:0 18px 8px;background:var(--w);border:1px solid var(--br);border-radius:var(--rs);padding:13px 14px;display:flex;align-items:center;gap:11px;cursor:pointer}
+.grp-card:active{background:var(--s)}
+.gc-av-row{display:flex;gap:-4px}
+.gc-info{flex:1}
+.gc-name{font-size:14px;font-weight:600;color:var(--k)}
+.gc-members{font-size:11px;color:var(--k3);margin-top:2px}
+.gc-use{background:var(--g);border:none;color:white;font-size:11px;font-weight:600;padding:6px 12px;border-radius:var(--rp);cursor:pointer;font-family:var(--fd)}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HOME -->
+<div class="screen active" id="s-home">
+  <div style="padding:0 18px">
+    <div style="padding:26px 0 18px">
+      <div class="logo-row">
+        <div class="lmark"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h9" stroke="white" stroke-width="2" stroke-linecap="round"/><circle cx="19" cy="18" r="4" fill="rgba(255,255,255,.25)"/><path d="M17 18h4M19 16v4" stroke="white" stroke-width="1.8" stroke-linecap="round"/></svg></div>
+        <div><div class="lname">SplitSnap</div><div style="font-size:11px;color:var(--k3);margin-top:1px">Smart bill splitting</div></div>
+        <div style="margin-left:auto;cursor:pointer" onclick="go('s-history')"><div style="font-size:22px">🕐</div><div style="font-size:9px;color:var(--k3);text-align:center;margin-top:1px">History</div></div>
+      </div>
+      <div id="debt-banner-area"></div>
+      <div class="h1">Split any bill,<br>perfectly.</div>
+      <div class="hsub">Food, travel, hotels — even split a 12-piece bucket by piece. Pay via GPay, PhonePe & more.</div>
+      <div style="margin-bottom:8px;font-family:var(--fd);font-size:11px;font-weight:600;color:var(--k3);text-transform:uppercase;letter-spacing:.7px">What are you splitting?</div>
+      <div class="cat-grid" id="cat-grid-home">
+        <div class="cat-tile sel" data-cat="food" onclick="pickCat('food',this)"><div class="ct-icon">🍽️</div><div class="ct-name">Food</div></div>
+        <div class="cat-tile" data-cat="travel" onclick="pickCat('travel',this)"><div class="ct-icon">✈️</div><div class="ct-name">Travel</div></div>
+        <div class="cat-tile" data-cat="hotel" onclick="pickCat('hotel',this)"><div class="ct-icon">🏨</div><div class="ct-name">Hotel</div></div>
+        <div class="cat-tile" data-cat="shopping" onclick="pickCat('shopping',this)"><div class="ct-icon">🛍️</div><div class="ct-name">Shopping</div></div>
+        <div class="cat-tile" data-cat="events" onclick="pickCat('events',this)"><div class="ct-icon">🎟️</div><div class="ct-name">Events</div></div>
+        <div class="cat-tile" data-cat="other" onclick="pickCat('other',this)"><div class="ct-icon">📋</div><div class="ct-name">Other</div></div>
+      </div>
+    </div>
+  </div>
+  <div id="recent-hist-section"></div>
+  <div class="bot">
+    <button class="btn btng" onclick="go('s-scan')">Scan a bill →</button>
+    <button class="btn btns" onclick="loadDemo()">Try demo (KFC bucket + Ola ride)</button>
+  </div>
+</div>
+
+<!-- HISTORY SCREEN -->
+<div class="screen" id="s-history">
+  <div class="nav"><div class="nb" onclick="go('s-home')"><svg viewBox="0 0 18 18" fill="none" width="18" height="18"><path d="M11 14L6 9L11 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="ntitle">History</div></div>
+  <div style="height:8px"></div>
+  <div id="history-list"></div>
+  <div class="bot"><button class="btn btns" onclick="go('s-home')">Back to home</button></div>
+</div>
+
+<!-- SCAN + EDIT (Step 1) -->
+<div class="screen" id="s-scan">
+  <div class="nav"><div class="nb" onclick="go('s-home')"><svg viewBox="0 0 18 18" fill="none" width="18" height="18"><path d="M11 14L6 9L11 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="ntitle">Bill details</div><div class="nbadge">Step 1</div></div>
+  <div class="prog-bar"><div class="prog-fill" style="width:33%"></div></div>
+  <div style="height:12px"></div>
+  <div id="scan-upload-area">
+    <div class="upload-zone" onclick="document.getElementById('bill-file').click()">
+      <input type="file" id="bill-file" accept="image/*" capture="environment" onchange="handleFile(event)" style="display:none">
+      <div class="uz-icon"><svg width="24" height="24" viewBox="0 0 26 26" fill="none"><rect x="2" y="5" width="22" height="17" rx="3" stroke="#0D9B72" stroke-width="1.8"/><circle cx="13" cy="13.5" r="4" stroke="#0D9B72" stroke-width="1.8"/><path d="M9 5L10.5 2.5H15.5L17 5" stroke="#0D9B72" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="uz-title">Take a photo of your bill</div>
+      <div class="uz-sub">Works with receipts, invoices, tickets</div>
+    </div>
+    <div class="or-div">— or —</div>
+    <div class="alt-btn" onclick="loadDemo()">Use demo bill (KFC + Ola)</div>
+    <div style="height:8px"></div>
+    <div class="alt-btn" onclick="showManualAdd()">Enter bill manually</div>
+  </div>
+  <div id="scan-loading" style="display:none"><div class="scan-ovl"><div class="spinner"></div><div class="smsg" id="scan-msg">Reading your bill...</div><div style="font-size:12px;color:var(--k3);margin-top:4px">AI is detecting items, quantities & prices</div></div></div>
+  <div id="scan-preview" style="display:none"><div class="prev-box"><img id="prev-img" src="" alt=""></div></div>
+  <div id="scan-err" style="display:none" class="err-chip" style="display:none"></div>
+
+  <!-- Bill meta + editable items (shown after scan) -->
+  <div id="bill-edit-area" style="display:none">
+    <div class="edit-banner">⚠️ <span>Review and fix items before continuing</span></div>
+    <!-- meta -->
+    <div style="margin:0 18px 10px;display:flex;gap:8px">
+      <input class="meta-inp" id="edit-vendor" placeholder="Place name" style="flex:2">
+      <input class="meta-inp" id="edit-tax" type="number" placeholder="Tax %" style="flex:1">
+    </div>
+    <div id="bill-summary-card"></div>
+    <div class="sh">Items <span class="sh-action" onclick="showAddItem()">+ Add item</span></div>
+    <div id="editable-items"></div>
+    <!-- add item form -->
+    <div id="add-item-form" style="display:none">
+      <div class="add-item-row">
+        <input class="ai-inp ai-name" id="ai-name" placeholder="Item name">
+        <input class="ai-inp ai-price" id="ai-price" type="number" placeholder="Price">
+        <input class="ai-inp ai-qty" id="ai-qty" type="number" placeholder="Qty" value="1">
+        <button class="ai-btn" onclick="addNewItem()">Add</button>
+      </div>
+      <label class="bucket-toggle"><input type="checkbox" id="ai-bucket" onchange="toggleBucketFields()"> This is a bucket/shared item (split by pieces)</label>
+      <div id="ai-bucket-fields" class="bucket-extra">
+        <div class="be-label">Total pieces</div>
+        <input class="be-inp" id="ai-pieces" type="number" placeholder="e.g. 12 for 12-piece bucket" min="2">
+      </div>
+    </div>
+  </div>
+
+  <div class="bot">
+    <button class="btn btng" id="scan-cta" onclick="handleScanCta()" disabled>Scan Bill with AI</button>
+    <button class="btn btns" id="scan-next" onclick="go('s-friends')" style="display:none">Items look good → Add friends</button>
+  </div>
+</div>
+
+<!-- FRIENDS + INVITE (Step 2 merged) -->
+<div class="screen" id="s-friends">
+  <div class="nav"><div class="nb" onclick="go('s-scan')"><svg viewBox="0 0 18 18" fill="none" width="18" height="18"><path d="M11 14L6 9L11 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="ntitle">Friends & Invite</div><div class="nbadge">Step 2</div></div>
+  <div class="prog-bar"><div class="prog-fill" style="width:66%"></div></div>
+  <div style="height:10px"></div>
+  <!-- saved groups -->
+  <div class="sh" style="margin-bottom:6px">Saved groups <span class="sh-action" onclick="saveCurrentGroup()">Save group</span></div>
+  <div class="grp-scroll" id="grp-scroll"></div>
+  <div style="height:10px"></div>
+  <div class="sh" style="margin-bottom:6px">People splitting</div>
+  <div class="you-chip"><div class="av" style="background:#C8F5E4;color:#0A6945">Y</div><div class="fi"><div class="fname">You</div><div class="ftag">Paid the bill · organiser</div></div></div>
+  <div id="friends-list"></div>
+  <div class="add-fr-row"><input type="text" id="f-inp" placeholder="Add friend's name" onkeydown="if(event.key==='Enter')addFriend()"><button onclick="addFriend()">+ Add</button></div>
+  <div id="f-err" class="err-chip"></div>
+  <!-- UPI -->
+  <div class="upi-card">
+    <div class="upi-title">Your UPI ID</div>
+    <div class="upi-sub">Friends pay you directly via GPay, PhonePe, etc.</div>
+    <div class="upi-row"><input type="text" id="upi-inp" placeholder="yourname@upi or 98765@paytm"><button onclick="saveUpi()">Save</button></div>
+    <div class="upi-app-row">
+      <div class="upi-chip" onclick="setUpiHint('gpay')"><div style="width:16px;height:16px;border-radius:3px;background:#1a73e8;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:white">G</div>GPay</div>
+      <div class="upi-chip" onclick="setUpiHint('phonepe')"><div style="width:16px;height:16px;border-radius:3px;background:#5f259f;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:white">Pe</div>PhonePe</div>
+      <div class="upi-chip" onclick="setUpiHint('paytm')"><div style="width:16px;height:16px;border-radius:3px;background:#002970;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:white">Pt</div>Paytm</div>
+      <div class="upi-chip" onclick="setUpiHint('bhim')"><div style="width:16px;height:16px;border-radius:3px;background:#00529B;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:white">B</div>BHIM</div>
+    </div>
+  </div>
+  <!-- Invite section -->
+  <div class="sh" style="margin-top:4px;margin-bottom:6px">Invite link</div>
+  <div class="inv-banner"><div class="inv-title">Share with your group</div><div class="inv-sub">Everyone opens the link on their phone and selects what they had.</div></div>
+  <div style="height:8px"></div>
+  <div class="link-row"><div class="link-url" id="share-link">splitsnap.app/s/——</div><button class="copy-btn" onclick="copyLink()">Copy</button></div>
+  <div class="share-grid">
+    <div class="sc wa" onclick="doWa()"><div class="sc-icon">💬</div><div class="sc-name">WhatsApp</div><div class="sc-desc">Send to group or chat</div></div>
+    <div class="sc sms" onclick="doSms()"><div class="sc-icon">📱</div><div class="sc-name">SMS</div><div class="sc-desc">Text message invite</div></div>
+  </div>
+  <div class="sh" style="margin-bottom:6px">Waiting for</div>
+  <div id="pending-list"></div>
+  <div class="bot">
+    <button class="btn btng" onclick="goToSelect()">Everyone's ready → Select items</button>
+    <button class="btn btna" onclick="quickEqualSplit()">⚡ Quick equal split</button>
+  </div>
+</div>
+
+<!-- SELECT (Step 3) -->
+<div class="screen" id="s-select">
+  <div class="nav"><div class="nb" onclick="go('s-friends')"><svg viewBox="0 0 18 18" fill="none" width="18" height="18"><path d="M11 14L6 9L11 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="ntitle">Who had what?</div><div class="nbadge">Step 3</div></div>
+  <div class="prog-bar"><div class="prog-fill" style="width:90%"></div></div>
+  <div class="split-mode-bar">
+    <div class="sm-btn active" id="sm-detail" onclick="setSplitMode('detail')">Detailed split</div>
+    <div class="sm-btn" id="sm-equal" onclick="setSplitMode('equal')">Equal split</div>
+    <div class="sm-btn" id="sm-auto" onclick="autoAssign()">✨ Auto-assign</div>
+  </div>
+  <div id="split-mode-note" style="padding:0 18px 10px;font-size:12px;color:var(--k3)">Tap items for each person. For bucket items, set exact pieces.</div>
+  <div id="select-area"></div>
+  <div class="bot"><button class="btn btng" onclick="calcSplit()">Calculate split →</button></div>
+</div>
+
+<!-- RESULTS -->
+<div class="screen" id="s-results">
+  <div class="nav"><div class="nb" onclick="go('s-select')"><svg viewBox="0 0 18 18" fill="none" width="18" height="18"><path d="M11 14L6 9L11 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="ntitle">Final split</div></div>
+  <div id="res-banner"></div>
+  <div id="insights-area"></div>
+  <div id="pay-tracker-summary"></div>
+  <div class="sh">Each person owes</div>
+  <div id="results-area"></div>
+  <div class="bot">
+    <button class="btn btng" onclick="saveToHistory()">Save to history ✓</button>
+    <button class="btn btns" onclick="go('s-home')">Split another bill</button>
+  </div>
+</div>
+
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════════
+let bill=null, friends=[], selections={}, pieceSel={}, unitSel={}, myUpi='', splitMode='detail', activeCat='food', payStatus={};
+let sessionId=Math.random().toString(36).substr(2,9).toUpperCase();
+const COLORS=[{bg:'#FFE8D8',t:'#7C2E0A'},{bg:'#D4E8FF',t:'#0A2F7C'},{bg:'#FFD6E8',t:'#7C0A3A'},{bg:'#D6FFE0',t:'#0A5C1E'},{bg:'#E8D6FF',t:'#3A0A7C'},{bg:'#FFFACB',t:'#5C4800'}];
+const CAT_EMOJI={food:'🍽️',travel:'✈️',hotel:'🏨',shopping:'🛍️',events:'🎟️',other:'📋'};
+const CAT_LABEL={food:'Restaurant',travel:'Travel',hotel:'Hotel/Stay',shopping:'Shopping',events:'Event',other:'Other'};
+
+// ── Storage helpers ──
+function lsGet(k){try{return JSON.parse(localStorage.getItem(k))}catch{return null}}
+function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}
+function getHistory(){return lsGet('ss_history')||[]}
+function getSavedGroups(){return lsGet('ss_groups')||[]}
+
+// ── Navigation ──
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');window.scrollTo(0,0)}
+
+function pickCat(cat,el){activeCat=cat;document.querySelectorAll('.cat-tile').forEach(t=>t.classList.remove('sel'));el.classList.add('sel')}
+
+// ════════════════════════════════════════════════
+// HOME
+// ════════════════════════════════════════════════
+function initHome(){
+  // debt banner
+  const hist=getHistory();
+  let owe=0,owed=0;
+  hist.forEach(h=>{
+    if(h.paidStatus){
+      Object.entries(h.paidStatus).forEach(([name,s])=>{
+        if(s==='pending'&&name!=='You') owed+=h.amounts[name]||0;
+      });
+    }
+  });
+  const db=document.getElementById('debt-banner-area');
+  if(owed>0||owe>0){
+    db.innerHTML=`<div class="debt-banner"><div class="db-col"><div class="db-label">Others owe you</div><div class="db-val">₹${owed.toFixed(0)}</div></div><div class="db-div"></div><div class="db-col"><div class="db-label">You owe</div><div class="db-val owe">₹${owe.toFixed(0)}</div></div></div>`;
+  } else db.innerHTML='';
+  // recent history
+  const rs=document.getElementById('recent-hist-section');
+  if(hist.length>0){
+    const recent=hist.slice(-3).reverse();
+    rs.innerHTML=`<div class="hist-row"><span class="hist-title">Recent splits</span><span class="hist-more" onclick="go('s-history')">See all →</span></div>`+
+    recent.map(h=>`<div class="hist-card" onclick="viewHistEntry('${h.id}')"><div class="hc-icon">${CAT_EMOJI[h.category]||'📋'}</div><div class="hc-info"><div class="hc-name">${h.vendor}</div><div class="hc-meta">${h.date} · ${h.people} people</div></div><div class="hc-amt">₹${h.total}</div></div>`).join('');
+  } else rs.innerHTML='';
+}
+
+function renderHistory(){
+  const hist=getHistory().reverse();
+  const el=document.getElementById('history-list');
+  if(hist.length===0){
+    el.innerHTML=`<div class="hist-empty"><div class="hist-empty-icon">🧾</div><div class="hist-empty-txt">No splits yet.<br>Start splitting bills and they'll appear here.</div></div>`;return;
+  }
+  el.innerHTML=hist.map(h=>`<div class="hist-card" onclick="viewHistEntry('${h.id}')"><div class="hc-icon">${CAT_EMOJI[h.category]||'📋'}</div><div class="hc-info"><div class="hc-name">${h.vendor}</div><div class="hc-meta">${h.date} · ${h.people} people · ${h.paidCount||0}/${h.people} paid</div></div><div class="hc-amt">₹${h.total}</div></div>`).join('');
+}
+
+function viewHistEntry(id){
+  const h=getHistory().find(x=>x.id===id);
+  if(!h)return;
+  toast(`${h.vendor} — ₹${h.total} · ${h.people} people`);
+}
+
+// ════════════════════════════════════════════════
+// SCAN / UPLOAD
+// ════════════════════════════════════════════════
+function handleFile(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    document.getElementById('scan-upload-area').style.display='none';
+    document.getElementById('prev-img').src=ev.target.result;
+    document.getElementById('scan-preview').style.display='block';
+    document.getElementById('scan-cta').disabled=false;
+    document.getElementById('scan-cta').style.display='';
+    document.getElementById('scan-next').style.display='none';
+  };
+  r.readAsDataURL(f);
+}
+
+function handleScanCta(){
+  const img=document.getElementById('prev-img');
+  if(!img.src||img.src===window.location.href)return;
+  scanBill(img.src);
+}
+
+async function scanBill(imgSrc){
+  const b64=imgSrc.split(',')[1];
+  const mime=imgSrc.split(';')[0].split(':')[1]||'image/jpeg';
+  document.getElementById('scan-cta').disabled=true;
+  document.getElementById('scan-preview').style.display='none';
+  document.getElementById('scan-loading').style.display='block';
+  document.getElementById('scan-err').style.display='none';
+  const msgs=['Reading your bill...','Detecting items & prices...','Finding bucket items...','Almost ready...'];
+  let mi=0;
+  const t=setInterval(()=>{document.getElementById('scan-msg').textContent=msgs[mi++%msgs.length]},1400);
+  try{
+    const res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({
+      model:'claude-sonnet-4-20250514',max_tokens:1500,
+      messages:[{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:mime,data:b64}},
+        {type:'text',text:`Analyze this bill/receipt image. Respond ONLY with valid JSON, no markdown/backticks.
+{"vendor":"name","category":"food|travel|hotel|shopping|events|other","date":"DD Mon YYYY","currency":"₹","items":[{"name":"item","qty":1,"price":100,"is_bucket":false,"bucket_pieces":null,"unit_type":null,"total_units":null}],"tax_pct":0,"service_pct":0}
+Rules: price=per-unit numeric. is_bucket=true if item has countable sub-units (pieces/km/hours/kg). bucket_pieces=count if bucket. unit_type=pieces|km|hours|kg|etc. total_units=same as bucket_pieces. If unclear, best estimate.`}
+      ]}]
+    })});
+    clearInterval(t);
+    const data=await res.json();
+    const raw=(data.content||[]).map(b=>b.text||'').join('').replace(/```[a-z]*/g,'').replace(/```/g,'').trim();
+    const p=JSON.parse(raw);
+    bill={vendor:p.vendor||'Bill',category:p.category||activeCat,date:p.date||new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),currency:p.currency||'₹',items:(p.items||[]).map(i=>({name:i.name,qty:+i.qty||1,price:+i.price||0,is_bucket:!!i.is_bucket,bucket_pieces:i.bucket_pieces?+i.bucket_pieces:null,unit_type:i.unit_type||null,total_units:i.total_units?+i.total_units:null})),tax_pct:+p.tax_pct||0,service_pct:+p.service_pct||0};
+    bill.subtotal=bill.items.reduce((s,i)=>s+i.price*i.qty,0);
+    document.getElementById('scan-loading').style.display='none';
+    showBillEdit();
+  }catch(err){
+    clearInterval(t);
+    document.getElementById('scan-loading').style.display='none';
+    document.getElementById('scan-preview').style.display='block';
+    const e=document.getElementById('scan-err');
+    e.style.display='block';e.textContent='Could not read bill. Try a clearer photo or use the demo.';
+    document.getElementById('scan-cta').disabled=false;
+  }
+}
+
+function showBillEdit(){
+  document.getElementById('scan-upload-area').style.display='none';
+  document.getElementById('scan-preview').style.display='none';
+  document.getElementById('bill-edit-area').style.display='block';
+  document.getElementById('scan-cta').style.display='none';
+  document.getElementById('scan-next').style.display='';
+  document.getElementById('edit-vendor').value=bill.vendor;
+  document.getElementById('edit-tax').value=bill.tax_pct||'';
+  renderBillSummary();
+  renderEditableItems();
+}
+
+function showManualAdd(){
+  bill={vendor:'',category:activeCat,date:new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}),currency:'₹',items:[],tax_pct:0,service_pct:0,subtotal:0};
+  document.getElementById('scan-upload-area').style.display='none';
+  document.getElementById('bill-edit-area').style.display='block';
+  document.getElementById('scan-cta').style.display='none';
+  document.getElementById('scan-next').style.display='';
+  document.getElementById('add-item-form').style.display='block';
+  renderBillSummary();
+  renderEditableItems();
+}
+
+function renderBillSummary(){
+  if(!bill)return;
+  bill.vendor=document.getElementById('edit-vendor')?.value||bill.vendor;
+  bill.tax_pct=+document.getElementById('edit-tax')?.value||0;
+  bill.subtotal=bill.items.reduce((s,i)=>s+i.price*i.qty,0);
+  const tax=bill.subtotal*bill.tax_pct/100;
+  const total=bill.subtotal+tax;
+  const C=bill.currency;
+  document.getElementById('bill-summary-card').innerHTML=`<div class="bill-card" style="margin:0 18px 0"><button class="bc-edit" onclick="document.getElementById('edit-vendor').focus()">Edit</button><div class="bc-cat">${CAT_EMOJI[bill.category]||'📋'} ${bill.vendor||'Bill'}</div><div class="bc-row"><span>Subtotal</span><span>${C}${bill.subtotal.toFixed(2)}</span></div>${bill.tax_pct>0?`<div class="bc-row"><span>Tax ${bill.tax_pct}%</span><span>${C}${tax.toFixed(2)}</span></div>`:''}<div class="bc-total"><span class="bc-tlabel">Total</span><span class="bc-tval">${C}${total.toFixed(2)}</span></div></div>`;
+}
+
+function renderEditableItems(){
+  const C=bill.currency;
+  document.getElementById('editable-items').innerHTML=bill.items.map((item,i)=>`
+    <div class="item-row" id="ir-${i}">
+      <div class="ir-dot${item.is_bucket?' bucket':''}"></div>
+      <div class="ir-body">
+        <div class="ir-name">${item.name}</div>
+        <div class="ir-badges">
+          <span class="badge badge-qty">×${item.qty}</span>
+          ${item.is_bucket?`<span class="badge badge-bucket">🪣 ${item.bucket_pieces||item.total_units} ${item.unit_type||'pieces'}</span>`:''}
+          ${!item.is_bucket&&item.qty>1?`<span class="badge badge-unit">${C}${item.price} each</span>`:''}
+        </div>
+        <div class="ir-edit-form" id="ef-${i}">
+          <input class="ef-inp ef-name" id="ef-n-${i}" value="${item.name}" placeholder="Name">
+          <input class="ef-inp ef-price" id="ef-p-${i}" type="number" value="${item.price}" placeholder="Price">
+          <input class="ef-inp ef-qty" id="ef-q-${i}" type="number" value="${item.qty}" placeholder="Qty">
+          <button class="ef-save" onclick="saveItemEdit(${i})">✓ Save</button>
+        </div>
+      </div>
+      <div class="ir-right">
+        <div class="ir-price">${C}${(item.price*item.qty).toFixed(2)}</div>
+        <div class="ir-actions">
+          <button class="ir-act-btn edit" onclick="toggleItemEdit(${i})">✏️ Edit</button>
+          <button class="ir-act-btn del" onclick="deleteItem(${i})">✕</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleItemEdit(i){
+  const ef=document.getElementById(`ef-${i}`);
+  ef.classList.toggle('open');
+}
+function saveItemEdit(i){
+  const n=document.getElementById(`ef-n-${i}`).value.trim();
+  const p=+document.getElementById(`ef-p-${i}`).value;
+  const q=+document.getElementById(`ef-q-${i}`).value||1;
+  if(!n||isNaN(p))return;
+  bill.items[i].name=n;bill.items[i].price=p;bill.items[i].qty=q;
+  renderBillSummary();renderEditableItems();
+}
+function deleteItem(i){
+  bill.items.splice(i,1);
+  renderBillSummary();renderEditableItems();
+}
+function showAddItem(){
+  const f=document.getElementById('add-item-form');
+  f.style.display=f.style.display==='none'?'block':'none';
+}
+function toggleBucketFields(){
+  document.getElementById('ai-bucket-fields').style.display=document.getElementById('ai-bucket').checked?'block':'none';
+}
+function addNewItem(){
+  const n=document.getElementById('ai-name').value.trim();
+  const p=+document.getElementById('ai-price').value;
+  const q=+document.getElementById('ai-qty').value||1;
+  const isBucket=document.getElementById('ai-bucket').checked;
+  const pieces=isBucket?+document.getElementById('ai-pieces').value:null;
+  if(!n||isNaN(p)||p<=0){toast('Enter valid name & price');return;}
+  bill.items.push({name:n,qty:q,price:p,is_bucket:isBucket,bucket_pieces:pieces,unit_type:isBucket?'pieces':null,total_units:pieces});
+  document.getElementById('ai-name').value='';document.getElementById('ai-price').value='';document.getElementById('ai-qty').value='1';document.getElementById('ai-bucket').checked=false;document.getElementById('ai-bucket-fields').style.display='none';
+  renderBillSummary();renderEditableItems();toast('Item added ✓');
+}
+
+function loadDemo(){
+  bill={vendor:'KFC + Ola',category:'food',date:'02 May 2026',currency:'₹',tax_pct:5,service_pct:2,items:[
+    {name:'Chicken Wings Bucket (12 pcs)',qty:1,price:599,is_bucket:true,bucket_pieces:12,unit_type:'pieces',total_units:12},
+    {name:'Zinger Burger',qty:2,price:160,is_bucket:false,bucket_pieces:null,unit_type:null,total_units:null},
+    {name:'Krushers Large',qty:3,price:130,is_bucket:false,bucket_pieces:null,unit_type:null,total_units:null},
+    {name:'Fries Regular',qty:4,price:90,is_bucket:false,bucket_pieces:null,unit_type:null,total_units:null},
+    {name:'Ola Cab Ride (18 km)',qty:1,price:270,is_bucket:true,bucket_pieces:18,unit_type:'km',total_units:18},
+    {name:'Parking Charges',qty:1,price:80,is_bucket:false,bucket_pieces:null,unit_type:null,total_units:null},
+  ]};
+  bill.subtotal=bill.items.reduce((s,i)=>s+i.price*i.qty,0);
+  document.getElementById('scan-upload-area').style.display='none';
+  document.getElementById('scan-loading').style.display='none';
+  document.getElementById('scan-preview').style.display='none';
+  showBillEdit();go('s-scan');
+}
+
+// ════════════════════════════════════════════════
+// FRIENDS + INVITE
+// ════════════════════════════════════════════════
+function addFriend(){
+  const inp=document.getElementById('f-inp');
+  const n=inp.value.trim();if(!n)return;
+  const err=document.getElementById('f-err');
+  if(friends.find(f=>f.name.toLowerCase()===n.toLowerCase())){err.style.display='block';err.textContent=`"${n}" already added.`;return;}
+  err.style.display='none';
+  const c=COLORS[friends.length%COLORS.length];
+  friends.push({name:n,bg:c.bg,txt:c.t});
+  inp.value='';inp.focus();
+  renderFriends();updatePending();updateShareLink();
+}
+function removeFriend(i){friends.splice(i,1);renderFriends();updatePending();}
+function renderFriends(){
+  document.getElementById('friends-list').innerHTML=friends.map((f,i)=>`
+    <div class="fr-chip">
+      <div class="av" style="background:${f.bg};color:${f.txt}">${f.name[0].toUpperCase()}</div>
+      <div class="fi"><div class="fname">${f.name}</div><div class="ftag">Will select items</div></div>
+      <button class="frm" onclick="removeFriend(${i})">×</button>
+    </div>`).join('');
+}
+function updateShareLink(){
+  const link=`https://splitsnap.app/s/${sessionId}`;
+  document.getElementById('share-link').textContent=link;
+}
+function updatePending(){
+  document.getElementById('pending-list').innerHTML=friends.map((f,i)=>`
+    <div class="pending-row">
+      <div class="pdot wait"></div>
+      <div class="av" style="background:${f.bg};color:${f.txt};width:30px;height:30px;border-radius:50%;font-size:11px;font-family:var(--fd);font-weight:700;display:flex;align-items:center;justify-content:center">${f.name[0].toUpperCase()}</div>
+      <div style="flex:1;font-size:13px;font-weight:500;color:var(--k)">${f.name}</div>
+      <div class="presend" onclick="resend(${i})">Resend ↗</div>
+    </div>`).join('');
+}
+
+// Saved groups
+function renderSavedGroups(){
+  const grps=getSavedGroups();
+  const el=document.getElementById('grp-scroll');
+  if(grps.length===0){el.innerHTML=`<div style="font-size:12px;color:var(--k3);padding:4px 0">No saved groups yet. Add friends and tap "Save group".</div>`;return;}
+  el.innerHTML=grps.map((g,i)=>`<div class="grp-pill" onclick="loadGroup(${i})">${g.name} (${g.members.length})</div>`).join('');
+}
+function saveCurrentGroup(){
+  if(friends.length===0){toast('Add friends first');return;}
+  const name=prompt('Name this group:');
+  if(!name)return;
+  const grps=getSavedGroups();
+  grps.push({name,members:friends.map(f=>({name:f.name,bg:f.bg,txt:f.txt}))});
+  lsSet('ss_groups',grps);
+  renderSavedGroups();toast(`Group "${name}" saved!`);
+}
+function loadGroup(i){
+  const grps=getSavedGroups();
+  const g=grps[i];if(!g)return;
+  friends=[...g.members];
+  renderFriends();updatePending();toast(`Loaded ${g.name} (${g.members.length} friends)`);
+}
+
+function saveUpi(){
+  const v=document.getElementById('upi-inp').value.trim();
+  if(v){myUpi=v;lsSet('ss_upi',v);toast('UPI ID saved ✓');}
+}
+function setUpiHint(app){
+  const hints={gpay:'name@okicici',phonepe:'9876543210@ybl',paytm:'9876543210@paytm',bhim:'name@upi'};
+  document.getElementById('upi-inp').placeholder=hints[app]||'';
+  document.getElementById('upi-inp').focus();
+}
+function copyLink(){navigator.clipboard.writeText(document.getElementById('share-link').textContent).catch(()=>{});toast('Link copied! 🔗')}
+function doWa(){
+  const link=document.getElementById('share-link').textContent;
+  const names=friends.map(f=>f.name).join(', ');
+  const msg=`Hey ${names}! 👋\n\nI've scanned our bill at *${bill?.vendor||''}*. Open the link, pick what you had — it'll calculate exactly what each of you owes! 🧾\n\n${link}`;
+  window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+}
+function doSms(){
+  const link=document.getElementById('share-link').textContent;
+  window.open(`sms:?body=${encodeURIComponent(`Hey! Pick your items from our bill: ${link}`)}`, '_blank');
+}
+function resend(i){
+  const f=friends[i];const link=document.getElementById('share-link').textContent;
+  window.open(`https://wa.me/?text=${encodeURIComponent(`Hey ${f.name}! Reminder — tap here to pick your items: ${link}`)}`, '_blank');
+}
+
+// ════════════════════════════════════════════════
+// SELECT
+// ════════════════════════════════════════════════
+function goToSelect(){
+  if(friends.length===0){const e=document.getElementById('f-err');e.style.display='block';e.textContent='Add at least one friend first.';return;}
+  document.getElementById('f-err').style.display='none';
+  const all=allPeople();
+  selections={};pieceSel={};unitSel={};
+  all.forEach(p=>{selections[p.name]={};pieceSel[p.name]={};unitSel[p.name]={};});
+  renderSelect();go('s-select');
+}
+
+function allPeople(){return [{name:'You',bg:'#C8F5E4',txt:'#0A6945'},...friends]}
+
+function setSplitMode(mode){
+  splitMode=mode;
+  document.querySelectorAll('.sm-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sm-'+mode)?.classList.add('active');
+  const note=document.getElementById('split-mode-note');
+  if(mode==='equal')note.textContent='Bill will be split equally. Tap Calculate.';
+  else if(mode==='detail')note.textContent='Tap items for each person. For bucket items, set exact pieces.';
+  if(mode==='equal'){renderSelect();} else {renderSelect();}
+}
+
+function autoAssign(){
+  // Smart auto-assignment: distribute non-bucket items round-robin
+  const all=allPeople();
+  const C=bill.currency;
+  selections={};pieceSel={};unitSel={};
+  all.forEach(p=>{selections[p.name]={};pieceSel[p.name]={};unitSel[p.name]={};});
+  bill.items.forEach((item,ii)=>{
+    if(item.is_bucket){
+      // equal pieces for bucket
+      const perPerson=Math.floor((item.bucket_pieces||item.total_units||1)/all.length);
+      all.forEach(p=>{pieceSel[p.name][ii]=perPerson;unitSel[p.name][ii]=perPerson;});
+    } else {
+      // round-robin assignment
+      const assignTo=all[ii%all.length];
+      selections[assignTo.name][ii]=true;
+    }
+  });
+  splitMode='detail';
+  document.querySelectorAll('.sm-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('sm-detail').classList.add('active');
+  renderSelect();toast('✨ Auto-assigned! Review and adjust.');
+}
+
+function quickEqualSplit(){
+  if(friends.length===0){const e=document.getElementById('f-err');e.style.display='block';e.textContent='Add at least one friend first.';return;}
+  document.getElementById('f-err').style.display='none';
+  splitMode='equal';
+  const all=allPeople();
+  selections={};pieceSel={};unitSel={};
+  all.forEach(p=>{selections[p.name]={};pieceSel[p.name]={};unitSel[p.name]={};});
+  calcSplit();
+}
+
+function renderSelect(){
+  const all=allPeople();
+  const C=bill.currency;
+  document.getElementById('select-area').innerHTML=all.map((p,pi)=>{
+    const itemRows=bill.items.map((item,ii)=>{
+      const isBucket=item.is_bucket&&(item.bucket_pieces||item.total_units);
+      const sel=selections[p.name]?.[ii];
+      const pcs=pieceSel[p.name]?.[ii]||0;
+      const totalUnits=item.bucket_pieces||item.total_units||1;
+      const pricePerUnit=(item.price*item.qty)/totalUnits;
+      const isMulti=!isBucket&&item.qty>1;
+      const sharedWith=allPeople().filter(x=>x.name!==p.name&&selections[x.name]?.[ii]).length;
+      const cls=sel?(sharedWith>0?'sel-item shared':'sel-item on'):'sel-item';
+      const suggestTag=item.name.toLowerCase().includes(p.name.toLowerCase())?`<span class="suggest-chip" onclick="event.stopPropagation();toggleSel('${p.name}',${ii},${pi})">AI suggests ✓</span>`:'';
+      if(isBucket){
+        return `<div class="sel-item" id="si-${pi}-${ii}" style="cursor:default">
+          <div class="si-top">
+            <div class="chk"><span class="ck-mark">${pcs>0?'✓':''}</span></div>
+            <div style="flex:1"><div class="si-name">${item.name}</div>${isMulti?`<div style="font-size:10px;color:var(--k3)">×${item.qty}</div>`:''}</div>
+            <div class="si-price">${C}${(item.price*item.qty).toFixed(2)}</div>
+          </div>
+          <div class="unit-stepper">
+            <div class="us-label">Pieces/units for ${p.name}</div>
+            <div class="us-btns">
+              <button class="usb" onclick="changePieces('${p.name}',${ii},${totalUnits},-1,${pi})">−</button>
+              <div class="us-val" id="uv-${pi}-${ii}">${pcs}</div>
+              <button class="usb" onclick="changePieces('${p.name}',${ii},${totalUnits},1,${pi})">+</button>
+            </div>
+            <div style="font-size:11px;color:var(--a);font-weight:600;min-width:60px;text-align:right" id="ua-${pi}-${ii}">${C}${(pcs*pricePerUnit).toFixed(2)}</div>
+          </div>
+        </div>`;
+      }
+      return `<div class="${cls}" id="si-${pi}-${ii}" onclick="toggleSel('${p.name}',${ii},${pi})">
+        <div class="si-top">
+          <div class="chk"><span class="ck-mark">✓</span></div>
+          <div class="si-name">${item.name}${isMulti?` <span style="font-size:10px;color:var(--k3)">×${item.qty} · ${C}${item.price} ea</span>`:''}</div>
+          <div class="si-price">${C}${(item.price*item.qty).toFixed(2)}</div>
+        </div>
+        ${suggestTag}
+        ${sharedWith>0&&sel?`<div style="font-size:10px;color:var(--a);margin-top:4px">Shared with ${sharedWith} other${sharedWith>1?'s':''} · you pay ÷${sharedWith+1}</div>`:''}
+      </div>`;
+    }).join('');
+    return `<div class="person-block">
+      <div class="pb-head">
+        <div class="av" style="background:${p.bg};color:${p.txt};width:32px;height:32px;border-radius:50%;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center">${p.name[0].toUpperCase()}</div>
+        <div class="pb-name">${p.name}</div>
+        ${pi===0?'<div style="font-size:10px;font-weight:700;background:var(--gl);color:var(--g2);padding:2px 8px;border-radius:var(--rp)">Payer</div>':''}
+      </div>${itemRows}</div>
+    ${pi<all.length-1?'<div class="divider"></div>':''}`;
+  }).join('');
+}
+
+function toggleSel(person,ii,pi){
+  selections[person][ii]=!selections[person][ii];
+  const el=document.getElementById(`si-${pi}-${ii}`);
+  const all=allPeople();
+  const sharedWith=all.filter(x=>x.name!==person&&selections[x.name]?.[ii]).length;
+  if(selections[person][ii]){el.className=sharedWith>0?'sel-item shared':'sel-item on';}else{el.className='sel-item';}
+  // update shared state across all people
+  all.forEach((p2,pi2)=>{
+    const el2=document.getElementById(`si-${pi2}-${ii}`);if(!el2||el2.style.cursor==='default')return;
+    const sw=all.filter(x=>x.name!==p2.name&&selections[x.name]?.[ii]).length;
+    if(selections[p2.name][ii]){el2.className=sw>0?'sel-item shared':'sel-item on';}else{el2.className='sel-item';}
+  });
+}
+
+function changePieces(person,ii,totalUnits,delta,pi){
+  const C=bill.currency;
+  const item=bill.items[ii];
+  const totalU=item.bucket_pieces||item.total_units||totalUnits;
+  const pricePerUnit=(item.price*item.qty)/totalU;
+  pieceSel[person]=pieceSel[person]||{};
+  unitSel[person]=unitSel[person]||{};
+  const cur=pieceSel[person][ii]||0;
+  const usedByOthers=allPeople().filter(p=>p.name!==person).reduce((s,p)=>s+(pieceSel[p.name]?.[ii]||0),0);
+  const newVal=Math.max(0,cur+delta);
+  if(delta>0&&usedByOthers+newVal>totalU){toast(`Only ${totalU} ${item.unit_type||'pieces'} total!`);return;}
+  pieceSel[person][ii]=newVal;
+  unitSel[person][ii]=newVal;
+  const el=document.getElementById(`uv-${pi}-${ii}`);
+  const ae=document.getElementById(`ua-${pi}-${ii}`);
+  if(el)el.textContent=newVal;
+  if(ae)ae.textContent=`${C}${(newVal*pricePerUnit).toFixed(2)}`;
+  const chk=document.getElementById(`si-${pi}-${ii}`)?.querySelector('.ck-mark');
+  if(chk)chk.textContent=newVal>0?'✓':'';
+}
+
+// ════════════════════════════════════════════════
+// CALCULATE
+// ════════════════════════════════════════════════
+function calcSplit(){
+  if(!bill)return;
+  const all=allPeople();
+  const taxRate=(bill.tax_pct||0)/100+(bill.service_pct||0)/100;
+  const C=bill.currency;
+  const results={};
+  all.forEach(p=>{results[p.name]={lines:[],sub:0,person:p}});
+
+  bill.items.forEach((item,ii)=>{
+    const isBucket=item.is_bucket&&(item.bucket_pieces||item.total_units);
+    const totalUnits=item.bucket_pieces||item.total_units||1;
+    const pricePerUnit=(item.price*item.qty)/totalUnits;
+
+    if(splitMode==='equal'){
+      const share=(item.price*item.qty)/all.length;
+      all.forEach(p=>{results[p.name].lines.push({name:item.name,share,mode:'equal',n:all.length});results[p.name].sub+=share;});
+    } else if(isBucket){
+      let totalAssigned=all.reduce((s,p)=>s+(pieceSel[p.name]?.[ii]||0),0);
+      const unassigned=totalUnits-totalAssigned;
+      all.forEach(p=>{
+        let units=pieceSel[p.name]?.[ii]||0;
+        if(p.name==='You')units+=unassigned;
+        if(units>0){const share=units*pricePerUnit;results[p.name].lines.push({name:item.name,share,mode:'bucket',unitDetail:`${units} ${item.unit_type||'pcs'}`});results[p.name].sub+=share;}
+      });
+    } else {
+      const who=all.filter(p=>selections[p.name][ii]);
+      const targets=who.length===0?[all[0]]:who;
+      const share=(item.price*item.qty)/targets.length;
+      targets.forEach(p=>{results[p.name].lines.push({name:item.name,share,mode:targets.length>1?'shared':'sole',n:targets.length});results[p.name].sub+=share;});
+    }
+  });
+
+  const grandTotal=bill.subtotal*(1+taxRate);
+  payStatus={};
+  all.forEach(p=>{payStatus[p.name]=p.name==='You'?'paid':'pending';});
+
+  // Results banner
+  document.getElementById('res-banner').innerHTML=`<div class="res-banner"><div class="rb-bg"></div><div class="rb-label">${CAT_EMOJI[bill.category]||'📋'} ${bill.vendor} · ${bill.date}</div><div class="rb-amt">${C}${grandTotal.toFixed(2)}</div><div class="rb-sub">${all.length} people · ${bill.items.length} items · ${splitMode==='equal'?'equal split':'item split'}</div></div>`;
+
+  // Insights
+  const amts={};all.forEach(p=>{const r=results[p.name];amts[p.name]=r.sub*(1+taxRate);});
+  const topSpender=all.reduce((a,b)=>amts[a.name]>amts[b.name]?a:b);
+  const maxItems=all.reduce((a,b)=>results[a.name].lines.length>results[b.name].lines.length?a:b);
+  document.getElementById('insights-area').innerHTML=`<div class="insights-row">
+    <div class="ins-card"><div class="ins-icon">💸</div><div class="ins-label">Top spender</div><div class="ins-val">${topSpender.name} · ${C}${amts[topSpender.name].toFixed(0)}</div></div>
+    <div class="ins-card"><div class="ins-icon">🍽️</div><div class="ins-label">Most items</div><div class="ins-val">${maxItems.name} · ${results[maxItems.name].lines.length} items</div></div>
+    <div class="ins-card"><div class="ins-icon">🧾</div><div class="ins-label">Bill total</div><div class="ins-val">${C}${grandTotal.toFixed(2)}</div></div>
+  </div>`;
+
+  // Pay tracker summary
+  const paidCount=Object.values(payStatus).filter(s=>s==='paid').length;
+  document.getElementById('pay-tracker-summary').innerHTML=`<div class="pay-summary" id="pay-sum-bar"><span>💰 Payment status</span><span id="paid-count-txt">${paidCount}/${all.length} paid</span></div>`;
+
+  // Fun messages
+  const funMessages=(person,amount)=>{
+    if(person==='You')return'✓ You paid — collect from others';
+    const ratio=amount/grandTotal;
+    if(ratio>0.4)return`${person} had the most — big spender! 😅`;
+    if(ratio<0.08)return`${person} had very little — almost free! 🎉`;
+    const msgs=[`${person} owes you ${C}${amount.toFixed(0)} 💸`,`${person} feasted well! 🍴`,`Time to pay up, ${person}! 😄`];
+    return msgs[Math.floor(Math.random()*msgs.length)];
+  };
+
+  // Person cards
+  const payerUpi=myUpi||lsGet('ss_upi')||'YOURNAME@upi';
+  document.getElementById('results-area').innerHTML=all.map(p=>{
+    const r=results[p.name];
+    const taxAmt=r.sub*taxRate;
+    const owes=r.sub+taxAmt;
+    const lineRows=r.lines.map(l=>{
+      let tag='';
+      if(l.mode==='bucket')tag=`<span class="tag-bucket">🪣 ${l.unitDetail}</span>`;
+      else if(l.mode==='shared')tag=`<span class="tag-eq">÷${l.n} equally</span>`;
+      else if(l.mode==='equal')tag=`<span class="tag-eq">÷${l.n} equal</span>`;
+      return `<div class="rpl"><div class="rpl-left"><div class="rpl-name">${l.name}</div>${tag?`<div class="rpl-detail">${tag}</div>`:''}</div><div class="rpl-amt">${C}${l.share.toFixed(2)}</div></div>`;
+    }).join('');
+    const taxRow=(bill.tax_pct||bill.service_pct)?`<div class="tax-row"><span>Taxes & charges</span><span>${C}${taxAmt.toFixed(2)}</span></div>`:'';
+    const upiAmt=owes.toFixed(2);
+    const note=encodeURIComponent(`SplitSnap:${bill.vendor}`);
+    const pn=encodeURIComponent('You');
+    const pa=encodeURIComponent(payerUpi);
+    const paySection=p.name==='You'?`<div class="payer-note">✓ You paid — collect from others</div>`:`
+      <div class="pay-sec">
+        <div class="pay-label">Pay ${C}${upiAmt} via</div>
+        <div class="pay-grid">
+          <a href="tez://upi/pay?pa=${pa}&pn=${pn}&am=${upiAmt}&cu=INR&tn=${note}" class="papp gpay" onclick="toast('Opening GPay...')"><div class="papp-logo" style="background:#1a73e8">G</div><div class="papp-name">GPay</div></a>
+          <a href="phonepe://pay?pa=${pa}&pn=${pn}&am=${upiAmt}&cu=INR&tn=${note}" class="papp phonepe" onclick="toast('Opening PhonePe...')"><div class="papp-logo" style="background:#5f259f">Pe</div><div class="papp-name">PhonePe</div></a>
+          <a href="paytmmp://pay?pa=${pa}&pn=${pn}&am=${upiAmt}&cu=INR&tn=${note}" class="papp paytm" onclick="toast('Opening Paytm...')"><div class="papp-logo" style="background:#002970">Pt</div><div class="papp-name">Paytm</div></a>
+          <a href="upi://pay?pa=${pa}&pn=${pn}&am=${upiAmt}&cu=INR&tn=${note}" class="papp bhim" onclick="toast('Opening BHIM...')"><div class="papp-logo" style="background:#00529B">B</div><div class="papp-name">BHIM</div></a>
+          <a href="credpay://pay?pa=${pa}&pn=${pn}&am=${upiAmt}&cu=INR&tn=${note}" class="papp cred" onclick="toast('Opening CRED...')"><div class="papp-logo" style="background:#1a1a1a">C</div><div class="papp-name">CRED</div></a>
+        </div>
+        ${payerUpi!=='YOURNAME@upi'?`<a href="upi://pay?pa=${pa}&pn=${pn}&am=${upiAmt}&cu=INR&tn=${note}" class="pay-upi-btn" onclick="toast('Opening UPI...')">Pay ${C}${upiAmt} via UPI →</a>`:`<div class="pay-note">Set your UPI ID in Step 2 so friends can pay you.</div>`}
+      </div>`;
+    const paidSt=payStatus[p.name]||'pending';
+    const paidToggle=p.name!=='You'?`<div class="paid-toggle"><div class="pt-label">Payment status</div><button class="pt-btn ${paidSt}" id="ptb-${p.name.replace(/\s/g,'_')}" onclick="togglePaid('${p.name}')">${paidSt==='paid'?'✓ Paid':'Pending'}</button></div>`:'';
+    return `<div class="rp-card">
+      <div class="rp-head">
+        <div class="av" style="background:${p.person.bg};color:${p.person.txt};width:38px;height:38px;border-radius:50%;font-size:14px;font-weight:700;display:flex;align-items:center;justify-content:center">${p.person.name[0].toUpperCase()}</div>
+        <div class="rpi"><div class="rpi-name">${p.person.name}</div><div class="rpi-tag">${p.name==='You'?'Paid the bill':p.name==='You'?'':'Tap to pay below'}</div></div>
+        <div class="rp-amt">${C}${owes.toFixed(2)}</div>
+      </div>
+      <div class="rp-items">${lineRows}</div>
+      ${taxRow}
+      <div class="fun-msg">${funMessages(p.name,owes)}</div>
+      ${paySection}
+      ${paidToggle}
+    </div>`;
+  }).join('');
+
+  go('s-results');
+}
+
+function togglePaid(name){
+  const cur=payStatus[name]||'pending';
+  payStatus[name]=cur==='paid'?'pending':'paid';
+  const btn=document.getElementById('ptb-'+name.replace(/\s/g,'_'));
+  if(btn){btn.className=`pt-btn ${payStatus[name]}`;btn.textContent=payStatus[name]==='paid'?'✓ Paid':'Pending';}
+  const paidCount=Object.values(payStatus).filter(s=>s==='paid').length;
+  const total=allPeople().length;
+  const el=document.getElementById('paid-count-txt');
+  if(el)el.textContent=`${paidCount}/${total} paid`;
+  toast(payStatus[name]==='paid'?`${name} marked as paid ✓`:`${name} marked as pending`);
+}
+
+// ════════════════════════════════════════════════
+// HISTORY SAVE
+// ════════════════════════════════════════════════
+function saveToHistory(){
+  if(!bill)return;
+  const all=allPeople();
+  const taxRate=(bill.tax_pct||0)/100+(bill.service_pct||0)/100;
+  const hist=getHistory();
+  const amounts={};
+  all.forEach(p=>{
+    const r=calcAmountForPerson(p.name);
+    amounts[p.name]=r*(1+taxRate);
+  });
+  hist.push({
+    id:sessionId,vendor:bill.vendor,category:bill.category||'food',
+    date:bill.date,total:(bill.subtotal*(1+(bill.tax_pct||0)/100+(bill.service_pct||0)/100)).toFixed(0),
+    people:all.length,amounts,paidStatus:{...payStatus},
+    paidCount:Object.values(payStatus).filter(s=>s==='paid').length
+  });
+  lsSet('ss_history',hist);
+  toast('Saved to history ✓');
+  initHome();
+}
+
+function calcAmountForPerson(personName){
+  if(!bill)return 0;
+  const all=allPeople();
+  let sub=0;
+  bill.items.forEach((item,ii)=>{
+    const isBucket=item.is_bucket&&(item.bucket_pieces||item.total_units);
+    const totalUnits=item.bucket_pieces||item.total_units||1;
+    const pricePerUnit=(item.price*item.qty)/totalUnits;
+    if(splitMode==='equal'){sub+=(item.price*item.qty)/all.length;}
+    else if(isBucket){const units=pieceSel[personName]?.[ii]||0;sub+=units*pricePerUnit;}
+    else{const who=all.filter(p=>selections[p.name]?.[ii]);const targets=who.length===0?[all[0]]:who;if(targets.find(p=>p.name===personName)){sub+=(item.price*item.qty)/targets.length;}}
+  });
+  return sub;
+}
+
+// ════════════════════════════════════════════════
+// TOAST + INIT
+// ════════════════════════════════════════════════
+function toast(msg){
+  const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2400);
+}
+
+// Init
+const savedUpi=lsGet('ss_upi');if(savedUpi){myUpi=savedUpi;const ui=document.getElementById('upi-inp');if(ui)ui.value=savedUpi;}
+updateShareLink();
+renderSavedGroups();
+initHome();
+renderHistory();
+</script>
+</body>
+</html>
